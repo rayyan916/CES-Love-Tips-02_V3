@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>戀愛軍師：真假貼士大考驗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 遊戲背景裝飾動畫 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.5), 0 0 30px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.8), 0 0 45px rgba(139, 92, 246, 0.6); }
+        }
+        .btn-glow {
+            animation: pulse-glow 2.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pop-in {
+            0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .chat-pop {
+            animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* 隱藏滾動條但保留滾動功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 玻璃擬態效果 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.78);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+    </style>
+</head>
+<body class="text-slate-100 flex items-center justify-center p-2 sm:p-4 md:p-6">
+
+    <!-- 背景光暈裝飾 -->
+    <div class="fixed top-10 left-10 w-64 h-64 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="fixed bottom-10 right-10 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- 遊戲主容器 (自適應手機、平板、電腦) -->
+    <main id="game-wrapper" class="w-full max-w-4xl glass-card rounded-3xl shadow-2xl overflow-hidden relative flex flex-col min-h-[92vh] sm:min-h-[640px] max-h-[95vh] border border-white/15">
+
+        <!-- 頂部導航與音效開關 -->
+        <header class="bg-slate-900/80 px-4 py-3 border-b border-white/10 flex items-center justify-between z-20 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <span class="w-3 h-3 rounded-full bg-pink-500 animate-ping"></span>
+                <span class="font-bold text-sm sm:text-base tracking-wide bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
+                    戀愛軍師：真假貼士大考驗
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-ref" onclick="toggleReferenceModal(true)" class="text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-full border border-white/10 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-medical text-pink-400"></i>
+                    <span>知識錦囊</span>
+                </button>
+                <button id="btn-sound" onclick="toggleSound()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 border border-white/10 transition" title="開關音效">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-xs"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ==================== 1. 開始畫面 (START SCREEN) ==================== -->
+        <section id="screen-start" class="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 text-center relative overflow-y-auto no-scrollbar">
+            
+            <!-- 角色與標題視覺圖 -->
+            <div class="relative mb-6 animate-float">
+                <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 p-1.5 shadow-2xl mx-auto">
+                    <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center overflow-hidden relative">
+                        <img src="https://i.postimg.cc/15smc2mY/CES-Love-Tips-02-Ken-01.png" 
+                             alt="阿Ken 正常樣子" 
+                             class="w-full h-full object-cover"
+                             onerror="this.src='https://placehold.co/300x300/1e293b/f472b6?text=Ken'">
+                    </div>
+                </div>
+                <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-1 rounded-full shadow-md whitespace-nowrap">
+                    自稱「情場鬼見愁」阿Ken
+                </span>
+            </div>
+
+            <h1 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight mb-3 bg-gradient-to-r from-white via-pink-200 to-violet-300 bg-clip-text text-transparent">
+                戀愛軍師：真假貼士大考驗
+            </h1>
+            <p class="text-slate-300 text-sm sm:text-base max-w-xl leading-relaxed mb-6">
+                你剛開始對異性產生好感，身邊的老友<strong class="text-amber-400">「阿Ken」</strong>立刻化身戀愛軍師，瘋狂傳訊息教你各種與女仔相處、訂立親密界限及性知識的「獨門貼士」……<br class="hidden sm:inline">
+                但小心！佢講嘅嘢有一半係<strong class="text-rose-400">害死人嘅流料</strong>，有一半係<strong class="text-emerald-400">正經知識</strong>！
+            </p>
+
+            <!-- 遊戲規則簡介卡片 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl mb-8 text-left">
+                <div class="bg-slate-800/70 border border-white/10 p-3.5 rounded-2xl flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xs sm:text-sm text-white">審視阿Ken貼士</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">閱讀阿Ken用青少年語氣傳來的10條相處與性知識貼士。</p>
+                    </div>
+                </div>
+                <div class="bg-slate-800/70 border border-white/10 p-3.5 rounded-2xl flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xs sm:text-sm text-white">選擇「認同」或「反對」</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">只須作出二選一判斷，考驗你對身心健康與香港法例的認知。</p>
+                    </div>
+                </div>
+                <div class="bg-slate-800/70 border border-white/10 p-3.5 rounded-2xl flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-heart-crack"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xs sm:text-sm text-white">小心 Bad Ending！</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">你只有 <span class="text-rose-400 font-bold">3點理智值</span>，若多次信錯流料將會觸發嚴重後果！</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="btn-glow bg-gradient-to-r from-pink-500 via-rose-500 to-violet-600 hover:from-pink-400 hover:to-violet-500 text-white font-black text-base sm:text-lg px-10 py-4 rounded-2xl shadow-xl transition transform active:scale-95 flex items-center gap-3 cursor-pointer">
+                <span>進入手機對話開始挑戰</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </section>
+
+        <!-- ==================== 2. 遊戲主畫面 (GAMEPLAY SCREEN) ==================== -->
+        <section id="screen-game" class="hidden flex-1 flex flex-col justify-between p-3 sm:p-6 overflow-y-auto no-scrollbar">
+            
+            <!-- 狀態列：關卡進度 與 玩家理智值(生命值) -->
+            <div class="bg-slate-900/90 border border-white/10 rounded-2xl p-3 sm:p-4 mb-4 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-3">
+                    <span id="badge-category" class="bg-pink-500/20 text-pink-300 border border-pink-500/30 text-xs font-bold px-3 py-1 rounded-full">
+                        保障身心健康
+                    </span>
+                    <span class="text-xs sm:text-sm text-slate-300 font-medium">
+                        貼士進度：<strong id="text-progress" class="text-white">1 / 10</strong>
+                    </span>
+                </div>
+
+                <!-- 理智值心心 -->
+                <div class="flex items-center gap-2 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-white/5">
+                    <span class="text-xs text-slate-300 font-medium">清醒理智值：</span>
+                    <div id="hearts-container" class="flex items-center gap-1.5 text-rose-500 text-sm sm:text-base">
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央主體：支援電腦雙欄 / 手機單欄自適應 -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-center my-auto">
+                
+                <!-- 左欄：朋友「阿Ken」角色立繪與狀態 (在手機上為緊湊橫幅，在平板電腦上為左側人物卡) -->
+                <div class="md:col-span-4 bg-slate-800/50 border border-white/10 rounded-2xl p-4 flex md:flex-col items-center gap-4 text-left md:text-center">
+                    <div id="avatar-box" class="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-2xl bg-gradient-to-tr from-amber-400 to-pink-500 p-1 shrink-0 relative shadow-lg transition-all duration-300">
+                        <div class="w-full h-full bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden">
+                            <img id="ken-avatar-img" 
+                                 src="https://i.postimg.cc/15smc2mY/CES-Love-Tips-02-Ken-01.png" 
+                                 alt="死黨阿Ken" 
+                                 class="w-full h-full object-cover transition-transform duration-300"
+                                 onerror="this.src='https://placehold.co/300x300/1e293b/f472b6?text=Ken'">
+                        </div>
+                        <span id="ken-online-dot" class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center md:justify-center gap-1.5">
+                            <h2 class="font-bold text-base sm:text-lg text-white">死黨 阿Ken</h2>
+                            <span id="ken-mood-tag" class="text-[11px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-semibold">自信吹水中</span>
+                        </div>
+                        <p id="ken-status-text" class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            「信我啦Bro！我睇過晒啲Post，跟住我教嘅貼士溝女實無死！」
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 右欄：手機對話框與貼士內容 -->
+                <div class="md:col-span-8 flex flex-col justify-between h-full">
+                    <div id="question-card" class="bg-slate-900/90 border border-white/15 rounded-3xl p-5 sm:p-7 shadow-xl relative chat-pop">
+                        <!-- 模擬通訊軟件頂部 -->
+                        <div class="flex items-center justify-between text-xs text-slate-400 mb-3 pb-2 border-b border-white/10">
+                            <span class="flex items-center gap-1.5 font-medium text-emerald-400">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> 阿Ken 傳來一條相處貼士
+                            </span>
+                            <span id="question-time">剛剛</span>
+                        </div>
+
+                        <!-- 情境背景標籤 -->
+                        <div id="question-context" class="text-xs sm:text-sm text-indigo-300 font-semibold mb-2">
+                            情境：討論緊點樣同女仔訂立親密界限...
+                        </div>
+
+                        <!-- 朋友阿Ken的青少年語氣對話 -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-800/80 border border-white/10 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-inner mb-4">
+                            <p id="question-dialogue" class="text-base sm:text-lg md:text-xl font-bold text-white leading-relaxed">
+                                載入題目中...
+                            </p>
+                        </div>
+
+                        <!-- 提示問題 -->
+                        <p class="text-xs sm:text-sm text-slate-300 text-center font-medium">
+                            請問你<strong class="text-emerald-400">「認同」</strong>定<strong class="text-rose-400">「反對」</strong>阿Ken呢個講法？
+                        </p>
+                    </div>
+
+                    <!-- 玩家選擇按鈕區：只須選擇「認同」及「反對」 -->
+                    <div id="choice-buttons" class="grid grid-cols-2 gap-3 sm:gap-5 mt-4">
+                        <button onclick="submitAnswer(true)" class="group bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 active:scale-95 text-white font-black py-4 sm:py-5 px-4 rounded-2xl shadow-lg shadow-emerald-950/50 border border-emerald-300/30 flex flex-col sm:flex-row items-center justify-center gap-2 transition cursor-pointer">
+                            <span class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-thumbs-up"></i>
+                            </span>
+                            <div class="text-center sm:text-left">
+                                <div class="text-lg sm:text-xl tracking-wide">認同</div>
+                                <div class="text-[11px] text-emerald-100 font-normal">講得幾有道理喎！</div>
+                            </div>
+                        </button>
+
+                        <button onclick="submitAnswer(false)" class="group bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 active:scale-95 text-white font-black py-4 sm:py-5 px-4 rounded-2xl shadow-lg shadow-rose-950/50 border border-rose-300/30 flex flex-col sm:flex-row items-center justify-center gap-2 transition cursor-pointer">
+                            <span class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg group-hover:scale-110 transition">
+                                <i class="fa-solid fa-hand"></i>
+                            </span>
+                            <div class="text-center sm:text-left">
+                                <div class="text-lg sm:text-xl tracking-wide">反對</div>
+                                <div class="text-[11px] text-rose-100 font-normal">唔好亂噏害人啦！</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. 結局畫面 (ENDING SCREEN - GOOD / BAD) ==================== -->
+        <section id="screen-ending" class="hidden flex-1 flex flex-col items-center justify-between p-4 sm:p-8 text-center overflow-y-auto no-scrollbar">
+            
+            <!-- 結局插圖展示框 (16:9 比例) -->
+            <div id="ending-image-frame" class="w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl mb-4 relative shrink-0 bg-slate-900">
+                <img id="ending-illustration" 
+                     src="https://i.postimg.cc/NfBs7SsW/CES-Love-Tips-02-Good-Ending.png" 
+                     alt="結局插圖" 
+                     class="w-full h-full object-cover"
+                     onerror="this.src='https://placehold.co/800x450/1e293b/ffffff?text=Ending'">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+                <span id="ending-badge" class="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg backdrop-blur-md">
+                    ENDING
+                </span>
+            </div>
+
+            <h2 id="ending-title" class="text-xl sm:text-3xl font-black text-white mb-2">
+                結局標題
+            </h2>
+
+            <p id="ending-desc" class="text-xs sm:text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed mb-4">
+                結局詳細描述...
+            </p>
+
+            <!-- 成績統計與關鍵重溫 -->
+            <div id="ending-summary-box" class="w-full max-w-2xl bg-slate-900/80 border border-white/10 rounded-2xl p-4 mb-5 text-left">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2.5 mb-2.5">
+                    <span class="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i id="ending-icon-small" class="fa-solid fa-crown text-amber-400"></i>
+                        <span>你的最終成績單</span>
+                    </span>
+                    <span id="ending-score" class="text-xs sm:text-sm font-black text-pink-400">答對 0 / 10 題</span>
+                </div>
+                <ul class="space-y-1.5 text-xs sm:text-sm text-slate-300">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-shield-heart text-pink-400 mt-1"></i>
+                        <span><strong>保障身心健康：</strong>訂立親密界限可避免感染性病（部分無明顯病徵、潛伏期長，且不只影響性器官）和意外懷孕（安全期及體外射精均不能有效避孕）。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-gavel text-amber-400 mt-1"></i>
+                        <span><strong>遵守香港法例：</strong>必須知悉合法性交年齡（16歲）及《刑事罪行條例》，切勿因一時衝動觸犯強姦、非禮或與未成年女童非法性交等嚴重罪行。</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 pb-2">
+                <button onclick="startGame()" class="bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-400 hover:to-violet-500 text-white font-bold px-8 py-3 rounded-2xl shadow-lg transition transform active:scale-95 flex items-center gap-2 cursor-pointer text-sm sm:text-base">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>再玩一次</span>
+                </button>
+                <button onclick="toggleReferenceModal(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-6 py-3 rounded-2xl border border-white/10 transition flex items-center gap-2 cursor-pointer text-sm sm:text-base">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>溫習三張知識卡</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== 4. 答題即時解說彈窗 (FEEDBACK MODAL) ==================== -->
+        <div id="modal-feedback" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-white/15 rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl chat-pop">
+                <div class="flex items-center gap-3.5 mb-4">
+                    <div id="feedback-avatar-wrap" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 shrink-0 shadow-md bg-slate-800">
+                        <img id="feedback-ken-img" 
+                             src="https://i.postimg.cc/BQ4SckSy/CES-Love-Tips-02-Ken-02.png" 
+                             alt="阿Ken反應" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-left">
+                        <div class="flex items-center gap-2">
+                            <span id="feedback-icon" class="text-lg"></span>
+                            <h3 id="feedback-title" class="text-lg sm:text-xl font-black">判斷正確！</h3>
+                        </div>
+                        <p id="feedback-ken-quote" class="text-xs text-slate-300 mt-1 italic">「咦？估唔到你識得咁清楚喎，算你醒目啦！」</p>
+                    </div>
+                </div>
+
+                <!-- 專業醫生/法官解說內容 -->
+                <div class="bg-slate-800/90 border border-white/10 rounded-2xl p-4 mb-5 text-left">
+                    <div class="flex items-center gap-2 text-xs font-bold text-pink-400 mb-1.5">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        <span id="feedback-source-tag">專業知識剖析</span>
+                    </div>
+                    <p id="feedback-explanation" class="text-sm sm:text-base text-slate-200 leading-relaxed"></p>
+                </div>
+
+                <button id="btn-next-question" onclick="nextStep()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition cursor-pointer">
+                    繼續下一題
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 5. 知識錦囊彈窗 (根據附圖整理的三張資料卡) ==================== -->
+        <div id="modal-reference" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+            <div class="bg-slate-900 border border-white/15 rounded-3xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden chat-pop">
+                <div class="p-4 sm:p-5 bg-slate-800/80 border-b border-white/10 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-book-medical text-pink-400 text-lg"></i>
+                        <h3 class="font-black text-base sm:text-lg text-white">性知識與法律責任錦囊（教材重點整理）</h3>
+                    </div>
+                    <button onclick="toggleReferenceModal(false)" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-200 flex items-center justify-center cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 sm:p-6 overflow-y-auto space-y-5 text-left text-xs sm:text-sm text-slate-200">
+                    <!-- 資料一：保障身心健康 -->
+                    <div class="bg-slate-800/60 border border-sky-500/30 rounded-2xl p-4">
+                        <h4 class="font-bold text-sky-300 text-sm sm:text-base mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-notes-medical"></i>（一）保障身心健康：訂立親密界限
+                        </h4>
+                        <ul class="list-disc list-inside space-y-1.5 text-slate-300 leading-relaxed">
+                            <li>青少年若因一時衝動發生無保護性行為，會增加<strong>感染性病</strong>或<strong>意外懷孕</strong>的風險。訂立親密界限可保障雙方身心健康。</li>
+                            <li><strong>性病迷思：</strong>部分青少年誤以為性病只會影響性器官，或使用安全套便可完全避免感染性病。事實上，部分性病<strong>並無明顯病徵，且潛伏期長</strong>，可能染病而不自知並傳播疾病。</li>
+                            <li><strong>避孕迷思：</strong>以為在<strong>安全期間性交</strong>或在<strong>體外射精</strong>便可防止女方懷孕，這是<strong>錯誤的</strong>。</li>
+                            <li><strong>育兒壓力：</strong>青少年欠缺獨立經濟能力，未能承擔育兒責任。意外懷孕會對女方身心帶來巨大影響，男女雙方也需承受難以預計的壓力。</li>
+                        </ul>
+                    </div>
+
+                    <!-- 資料二：常見性知識是非題 -->
+                    <div class="bg-slate-800/60 border border-emerald-500/30 rounded-2xl p-4">
+                        <h4 class="font-bold text-emerald-300 text-sm sm:text-base mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check"></i>（二）關鍵性知識是非題
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="bg-slate-900/70 p-3 rounded-xl border border-white/5">
+                                <span class="text-rose-400 font-bold">【不正確】</span> 1. 來經前兩星期性交成孕機會較低（這正是排卵期附近，成孕機會極高！）
+                            </div>
+                            <div class="bg-slate-900/70 p-3 rounded-xl border border-white/5">
+                                <span class="text-emerald-400 font-bold">【正確】</span> 2. 男方在女方陰道外射精也會令女方成孕
+                            </div>
+                            <div class="bg-slate-900/70 p-3 rounded-xl border border-white/5">
+                                <span class="text-rose-400 font-bold">【不正確】</span> 3. 性病只會影響性器官
+                            </div>
+                            <div class="bg-slate-900/70 p-3 rounded-xl border border-white/5">
+                                <span class="text-emerald-400 font-bold">【正確】</span> 4. 共用針筒可傳染愛滋病
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 資料三：遵守法律 -->
+                    <div class="bg-slate-800/60 border border-amber-500/30 rounded-2xl p-4">
+                        <h4 class="font-bold text-amber-300 text-sm sm:text-base mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-scale-balanced"></i>（三）遵守法律：香港《刑事罪行條例》最高刑罰
+                        </h4>
+                        <p class="text-slate-300 mb-3">現行香港法例對合法性交年齡有所規定，也規管戀愛暴力和猥褻行為：</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-amber-500/20 text-amber-200">
+                                        <th class="p-2.5 rounded-tl-lg">《刑事罪行條例》罪行</th>
+                                        <th class="p-2.5 rounded-tr-lg">最高刑罰</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/10 text-slate-300">
+                                    <tr><td class="p-2">強姦</td><td class="p-2 font-bold text-rose-400">終身監禁</td></tr>
+                                    <tr><td class="p-2">以威脅或恐嚇手段，促使他人進行非法性行為</td><td class="p-2 font-bold text-amber-300">監禁 14 年</td></tr>
+                                    <tr><td class="p-2">猥褻侵犯（非禮）</td><td class="p-2 font-bold text-amber-300">監禁 10 年</td></tr>
+                                    <tr><td class="p-2">與 13 歲以下女童非法性交</td><td class="p-2 font-bold text-rose-400">終身監禁</td></tr>
+                                    <tr><td class="p-2">與 16 歲以下女童非法性交</td><td class="p-2 font-bold text-amber-300">監禁 5 年</td></tr>
+                                    <tr><td class="p-2">向 16 歲以下兒童作出猥褻行為</td><td class="p-2 font-bold text-amber-300">監禁 10 年</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-800/80 border-t border-white/10 text-right">
+                    <button onclick="toggleReferenceModal(false)" class="bg-pink-500 hover:bg-pink-400 text-white font-bold px-6 py-2 rounded-xl transition cursor-pointer">
+                        返回遊戲
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // 遊戲插圖網址設定
+        const GAME_IMAGES = {
+            kenNormal: "https://i.postimg.cc/15smc2mY/CES-Love-Tips-02-Ken-01.png",
+            kenCorrect: "https://i.postimg.cc/BQ4SckSy/CES-Love-Tips-02-Ken-02.png",
+            kenWrong: "https://i.postimg.cc/QxmX6mV9/CES-Love-Tips-02-Ken-03.png",
+            goodEnding: "https://i.postimg.cc/NfBs7SsW/CES-Love-Tips-02-Good-Ending.png",
+            badEnding: "https://i.postimg.cc/28rkFMkG/CES-Love-Tips-02-Bad-Ending.png"
+        };
+
+        // 預先載入所有插圖，確保切換表情與結局時零延遲
+        function preloadGameImages() {
+            Object.values(GAME_IMAGES).forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+        window.addEventListener('DOMContentLoaded', preloadGameImages);
+
+        // 更新阿Ken立繪與狀態的輔助函式
+        function setKenState(mode) {
+            const avatarImg = document.getElementById('ken-avatar-img');
+            const avatarBox = document.getElementById('avatar-box');
+            const moodTag = document.getElementById('ken-mood-tag');
+            const statusText = document.getElementById('ken-status-text');
+
+            if (mode === 'correct') {
+                avatarImg.src = GAME_IMAGES.kenCorrect;
+                avatarBox.className = 'w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-500 p-1 shrink-0 relative shadow-lg transition-all duration-300 scale-105';
+                moodTag.className = 'text-[11px] bg-emerald-400/20 text-emerald-300 px-2 py-0.5 rounded-md font-semibold';
+                moodTag.textContent = '佩服讚賞';
+                statusText.textContent = '「咦？估唔到你識得咁清楚喎，算你醒目啦！」';
+            } else if (mode === 'wrong') {
+                avatarImg.src = GAME_IMAGES.kenWrong;
+                avatarBox.className = 'w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 p-1 shrink-0 relative shadow-lg transition-all duration-300';
+                moodTag.className = 'text-[11px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-md font-semibold';
+                moodTag.textContent = '慌張心虛';
+                statusText.textContent = '「弊傢伙！原來我講錯咗流料害死你添...」';
+            } else {
+                avatarImg.src = GAME_IMAGES.kenNormal;
+                avatarBox.className = 'w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-2xl bg-gradient-to-tr from-amber-400 to-pink-500 p-1 shrink-0 relative shadow-lg transition-all duration-300';
+                moodTag.className = 'text-[11px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md font-semibold';
+                moodTag.textContent = '自信吹水中';
+                statusText.textContent = '「信我啦Bro！我睇過晒啲Post，跟住我教嘅貼士溝女實無死！」';
+            }
+        }
+
+        /**
+         * 題庫設計：完全根據用戶提供的三張圖片資料編寫，
+         * 並轉化為朋友「阿Ken」的香港青少年日常對話語氣。
+         * isAgreeCorrect: true 代表玩家應選「認同」，false 代表玩家應選「反對」
+         */
+        const QUESTIONS_BANK = [
+            {
+                category: "避孕迷思",
+                context: "情境：阿Ken同你傾緊拍拖親密行為嘅避孕方法...",
+                dialogue: "「Bro，同女朋友親熱嗰陣唔使戴套咁麻煩㗎！只要你睇準時機喺『體外射精』，或者揀『安全期』搞，女方就絕對唔會陀B啦！」",
+                isAgreeCorrect: false,
+                sourceTag: "資料一及二：避孕知識與成孕風險",
+                explanation: "大錯特錯！不少青少年缺乏正確避孕知識，以為在安全期間性交或在體外射精便可防止女方懷孕，但這是錯誤的！男方在射精前分泌的前列腺液已可能含有精子，在陰道外射精同樣會令女方成孕。"
+            },
+            {
+                category: "生理知識",
+                context: "情境：阿Ken拎住個日曆教你計「安全期」...",
+                dialogue: "「我上網睇過啦，女仔喺『來經前兩星期』性交，受孕機會係最低嘅，嗰幾日最安全！」",
+                isAgreeCorrect: false,
+                sourceTag: "資料二：標準答案【不正確】",
+                explanation: "完全錯誤！女性排卵期通常就是在下次來經前的14天（兩星期）左右，這段時間性交的成孕機會反而最高，絕不是成孕機會較低！"
+            },
+            {
+                category: "性病認知",
+                context: "情境：阿Ken講起萬一唔小心惹到性病點算...",
+                dialogue: "「就算唔好彩惹到性病都唔使咁驚啦，性病只會影響性器官啫，身體其他部位完全唔會有事嘅，而且一有病就實會即刻痕或者痛！」",
+                isAgreeCorrect: false,
+                sourceTag: "資料一及二：性病迷思【不正確】",
+                explanation: "千萬別信！「性病只會影響性器官」是不正確的，性病可影響全身多個器官及免疫系統。而且部分性病並無明顯病徵，且潛伏期長，青少年可能染上性病而不知情，因而傳播疾病。"
+            },
+            {
+                category: "身心健康",
+                context: "情境：你問阿Ken係咪應該同女朋友一齊訂立親密界限...",
+                dialogue: "「講真，我哋而家仲讀緊書，根本無獨立經濟能力去湊B。如果一時衝動搞出意外懷孕，唔單止女方身心受巨大影響，男女雙方都要承受難以預計嘅壓力，所以拍拖嗰陣訂立親密界限係好重要！」",
+                isAgreeCorrect: true,
+                sourceTag: "資料一：保障雙方身心健康",
+                explanation: "今次阿Ken終於講啱！青少年欠缺獨立經濟能力，未能承擔育兒責任。訂立清晰的親密界限，可避免感染性病和意外懷孕，保障雙方的身心健康。"
+            },
+            {
+                category: "遵守法律",
+                context: "情境：阿Ken提到隔離班有個男仔想追一個15歲嘅師妹...",
+                dialogue: "「喂，只要個女仔自己心甘情願，就算佢未滿16歲（例如15歲），同佢發生性行為喺香港都係完全合法嘅，警察唔會拉！」",
+                isAgreeCorrect: false,
+                sourceTag: "資料三：《刑事罪行條例》",
+                explanation: "嚴重違法！根據香港《刑事罪行條例》，香港合法性交年齡為16歲。即使女方同意，「與16歲以下女童非法性交」最高可被判處【監禁5年】；若女童為13歲以下，最高更可判處【終身監禁】！"
+            },
+            {
+                category: "遵守法律",
+                context: "情境：阿Ken傾起如果女朋友唔肯發生超友誼關係點算...",
+                dialogue: "「如果條女唔肯同你發生性行為，咪試下用言語威脅或者恐嚇佢囉（例如話唔肯就唱衰佢），迫佢就範最多都係情侶嘈交，邊算犯法呀？」",
+                isAgreeCorrect: false,
+                sourceTag: "資料三：《刑事罪行條例》",
+                explanation: "絕對犯法！根據《刑事罪行條例》，「以威脅或恐嚇手段，促使他人進行非法性行為」屬於嚴重刑事罪行，最高刑罰為【監禁14年】！強姦罪最高更可判處【終身監禁】。"
+            },
+            {
+                category: "性病認知",
+                context: "情境：阿Ken同你討論安全套嘅作用...",
+                dialogue: "「只要戴咗安全套就係『無敵防禦』，100%絕對唔會感染任何性病，可以完全放心晒！」",
+                isAgreeCorrect: false,
+                sourceTag: "資料一：性病防護知識",
+                explanation: "小心誤解！雖然正確使用安全套能大幅減低風險，但資料指出「以為使用安全套便可完全避免感染性病」屬於常見誤解（例如部分透過皮膚接觸傳播的性病未必能完全隔絕），因此訂立親密界限同樣重要。"
+            },
+            {
+                category: "傳染途徑",
+                context: "情境：阿Ken睇完健康教育展覽後同你分享...",
+                dialogue: "「頭先我睇書先知，愛滋病唔單止會經性接觸傳播，如果同人『共用針筒』，一樣可以傳染愛滋病㗎！」",
+                isAgreeCorrect: true,
+                sourceTag: "資料二：標準答案【正確】",
+                explanation: "判斷正確！血液接觸是愛滋病病毒（HIV）的主要傳播途徑之一，因此「共用針筒可傳染愛滋病」是完全正確的。"
+            },
+            {
+                category: "遵守法律",
+                context: "情境：阿Ken見到有人喺派對度想趁女仔唔覺意「抽水」...",
+                dialogue: "「喂，我即刻喝住佢呀！喺香港未經人哋同意亂摸人（猥褻侵犯／非禮），或者向16歲以下兒童作出猥褻行為，根據《刑事罪行條例》最高可以判監禁10年㗎！」",
+                isAgreeCorrect: true,
+                sourceTag: "資料三：《刑事罪行條例》最高刑罰",
+                explanation: "阿Ken呢次非常清醒！根據香港《刑事罪行條例》，「猥褻侵犯（非禮）」以及「向16歲以下兒童作出猥褻行為」，最高刑罰均為【監禁10年】。尊重他人身體自主是基本責任！"
+            },
+            {
+                category: "遵守法律",
+                context: "情境：最後一條貼士，阿Ken總結同異性相處嘅底線...",
+                dialogue: "「同女仔相處最緊要識得尊重同埋遵守法律！強姦罪或者與13歲以下女童非法性交，最高刑罰係『終身監禁』，千祈唔好因為一時衝動毀咗人哋同自己一生！」",
+                isAgreeCorrect: true,
+                sourceTag: "資料三：遵守法律與親密界限",
+                explanation: "完全正確！青少年在訂立親密界限時，必須知悉有關的法律責任與身心健康影響，尊重對方意願，保護自己與伴侶。"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let sanityLives = 3; // 3點理智值，扣光即進入 Bad Ending
+        let correctCount = 0;
+        let shuffledQuestions = [];
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        // 使用 Web Audio API 產生無須外部檔案的清脆音效
+        function playTone(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.28);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                }
+            } catch (e) {
+                // 忽略瀏覽器音效限制錯誤
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = soundEnabled ? 'fa-solid fa-volume-high text-xs text-emerald-400' : 'fa-solid fa-volume-xmark text-xs text-slate-500';
+            if (soundEnabled) playTone('click');
+        }
+
+        function toggleReferenceModal(show) {
+            playTone('click');
+            const modal = document.getElementById('modal-reference');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function startGame() {
+            playTone('click');
+            currentQuestionIndex = 0;
+            sanityLives = 3;
+            correctCount = 0;
+            // 保留題庫順序但可微調，確保最後一題為總結題
+            shuffledQuestions = [...QUESTIONS_BANK];
+
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-ending').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            updateHeartsUI();
+            renderQuestion();
+        }
+
+        function updateHeartsUI() {
+            const container = document.getElementById('hearts-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('i');
+                if (i < sanityLives) {
+                    heart.className = 'fa-solid fa-heart text-rose-500 transition transform scale-100';
+                } else {
+                    heart.className = 'fa-regular fa-heart text-slate-600 transition transform scale-90';
+                }
+                container.appendChild(heart);
+            }
+        }
+
+        function renderQuestion() {
+            const q = shuffledQuestions[currentQuestionIndex];
+            document.getElementById('badge-category').textContent = q.category;
+            document.getElementById('text-progress').textContent = `${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+            document.getElementById('question-context').textContent = q.context;
+            document.getElementById('question-dialogue').textContent = q.dialogue;
+
+            // 每次出新題目時，將阿Ken回復為「正常自信吹水」表情
+            setKenState('normal');
+
+            // 重新觸發對話框彈出動畫
+            const card = document.getElementById('question-card');
+            card.classList.remove('chat-pop');
+            void card.offsetWidth;
+            card.classList.add('chat-pop');
+        }
+
+        function submitAnswer(playerChoseAgree) {
+            const q = shuffledQuestions[currentQuestionIndex];
+            const isCorrect = (playerChoseAgree === q.isAgreeCorrect);
+
+            const modal = document.getElementById('modal-feedback');
+            const avatarWrap = document.getElementById('feedback-avatar-wrap');
+            const feedbackKenImg = document.getElementById('feedback-ken-img');
+            const feedbackKenQuote = document.getElementById('feedback-ken-quote');
+            const iconBox = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const sourceTag = document.getElementById('feedback-source-tag');
+            const explanation = document.getElementById('feedback-explanation');
+            const nextBtn = document.getElementById('btn-next-question');
+
+            sourceTag.textContent = q.sourceTag;
+            explanation.textContent = q.explanation;
+
+            if (isCorrect) {
+                playTone('correct');
+                correctCount++;
+                setKenState('correct');
+
+                feedbackKenImg.src = GAME_IMAGES.kenCorrect;
+                avatarWrap.className = 'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-emerald-400 shrink-0 shadow-md bg-slate-800';
+                iconBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                title.textContent = '頭腦清醒！判斷正確！';
+                title.className = 'text-lg sm:text-xl font-black text-emerald-400';
+                feedbackKenQuote.textContent = '阿Ken：「佩服佩服！估唔到你對性知識同法律咁清楚，算你醒目！」';
+            } else {
+                playTone('wrong');
+                sanityLives--;
+                updateHeartsUI();
+                setKenState('wrong');
+
+                // 畫面震動效果提示失誤
+                const wrapper = document.getElementById('game-wrapper');
+                wrapper.classList.remove('animate-shake');
+                void wrapper.offsetWidth;
+                wrapper.classList.add('animate-shake');
+
+                feedbackKenImg.src = GAME_IMAGES.kenWrong;
+                avatarWrap.className = 'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-rose-500 shrink-0 shadow-md bg-slate-800';
+                iconBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-400"></i>';
+                title.textContent = `中伏了！理智值剩餘 ${sanityLives} 點`;
+                title.className = 'text-lg sm:text-xl font-black text-rose-400';
+                feedbackKenQuote.textContent = '阿Ken：「弊傢伙！原來我信錯網上流料點錯相，累死你添...」';
+            }
+
+            // 檢查是否已經耗盡理智值觸發 Bad Ending，或到達最後一題
+            if (sanityLives <= 0) {
+                nextBtn.textContent = '理智值耗盡 — 查看後果 (Bad Ending)';
+                nextBtn.className = 'w-full bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition cursor-pointer';
+            } else if (currentQuestionIndex >= shuffledQuestions.length - 1) {
+                nextBtn.textContent = '完成所有考驗 — 查看結局';
+                nextBtn.className = 'w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition cursor-pointer';
+            } else {
+                nextBtn.textContent = '明白！繼續下一條貼士';
+                nextBtn.className = 'w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition cursor-pointer';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function nextStep() {
+            playTone('click');
+            document.getElementById('modal-feedback').classList.add('hidden');
+
+            // 如多次選擇錯誤（累計錯3次，理智值歸零），立即面對 Bad Ending
+            if (sanityLives <= 0) {
+                showEnding(false);
+                return;
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= shuffledQuestions.length) {
+                showEnding(true);
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function showEnding(isGoodEnding) {
+            document.getElementById('screen-game').classList.add('hidden');
+            const endingScreen = document.getElementById('screen-ending');
+            endingScreen.classList.remove('hidden');
+
+            const endingImg = document.getElementById('ending-illustration');
+            const endingFrame = document.getElementById('ending-image-frame');
+            const iconSmall = document.getElementById('ending-icon-small');
+            const badge = document.getElementById('ending-badge');
+            const title = document.getElementById('ending-title');
+            const desc = document.getElementById('ending-desc');
+            const score = document.getElementById('ending-score');
+
+            score.textContent = `答對 ${correctCount} / ${shuffledQuestions.length} 題`;
+
+            if (!isGoodEnding) {
+                // BAD ENDING：多次選擇錯誤，顯示 Bad Ending 專屬插圖
+                endingImg.src = GAME_IMAGES.badEnding;
+                endingFrame.className = 'w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border-2 border-rose-500/60 shadow-2xl shadow-rose-950/50 mb-4 relative shrink-0 bg-slate-900';
+                iconSmall.className = 'fa-solid fa-handcuffs text-rose-400';
+                badge.className = 'absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg backdrop-blur-md bg-rose-950/90 text-rose-200 border border-rose-400/50 whitespace-nowrap';
+                badge.textContent = 'BAD ENDING · 盲信流料釀成大禍';
+                title.textContent = '失足悔恨：身心與法律的雙重代價';
+                desc.innerHTML = '因為你多次誤信阿Ken的錯誤「貼士」，不但缺乏正確的避孕及性病知識，更忽視了訂立親密界限與香港《刑事罪行條例》的法律底線。<br class="hidden sm:inline">最終，一時衝動帶來了<strong>感染性病、意外懷孕的沉重育兒壓力</strong>，甚至可能<strong>觸犯與未成年女童非法性交或猥褻侵犯等嚴重刑事罪行</strong>，面臨牢獄之災，令自己與伴侶抱憾終生！';
+            } else {
+                // GOOD ENDING：成功過關，顯示 Good Ending 專屬插圖
+                endingImg.src = GAME_IMAGES.goodEnding;
+                endingFrame.className = 'w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border-2 border-emerald-400/60 shadow-2xl shadow-emerald-950/50 mb-4 relative shrink-0 bg-slate-900';
+                iconSmall.className = 'fa-solid fa-crown text-amber-400';
+                badge.className = 'absolute bottom-3 left-1/2 -translate-x-1/2 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg backdrop-blur-md bg-emerald-950/90 text-emerald-200 border border-emerald-400/50 whitespace-nowrap';
+                badge.textContent = 'TRUE ENDING · 真·戀愛智慧王';
+                title.textContent = '尊重與保護：健康真摯的戀愛關係';
+                desc.innerHTML = '恭喜你！面對阿Ken真假參半的「貼士」，你展現出極高警覺性與正確的性知識！<br class="hidden sm:inline">你明白<strong>安全期與體外射精並非有效避孕方法</strong>，清楚<strong>性病的潛伏期與傳播途徑</strong>，更時刻謹記<strong>香港《刑事罪行條例》與合法性交年齡規定</strong>。你懂得與伴侶共同訂立親密界限，互相尊重，成功守護了雙方的身心健康與未來！';
+            }
+        }
+    </script>
+</body>
+</html>
